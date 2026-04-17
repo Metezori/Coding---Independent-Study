@@ -1,5 +1,50 @@
-def winCheck (matrix, p1, p2, threshold):
+import copy
 
+def minimax (position, depth, maximizing):
+    evaluation = winCheck(position, "X", "O", 3)
+    if depth == 0 or gameOver(position):
+        return(evaluation)
+    elif evaluation != 0:
+        return(evaluation)
+    
+    if maximizing:
+        maxEval = float('-inf')
+        childs = nextMoves(position, "X")
+        for child in childs:
+            evaluation = minimax(child, depth - 1, False)
+            maxEval = max(maxEval, evaluation)
+        return(maxEval)
+    
+    else:
+        minEval = float('inf')
+        childs = nextMoves(position, "O")
+        for child in childs:
+            evaluation = minimax(child, depth - 1, True)
+            minEval = min(minEval, evaluation)
+        return(minEval)
+
+def nextMoves (current, player):
+    childs = []
+    for row in range(len(current)):
+        for col in range(len(current[0])):
+            if current[row][col] != "X" and current[row][col] != "O":
+                new = copy.deepcopy(current)
+                new[row][col] = player
+                childs.append(new)
+    return(childs)
+
+def gameOver (current):
+    for row in range(len(current)):
+        for col in range(len(current[0])):
+            if current[row][col] != "X" and current[row][col] != "O":
+                return(False)
+    return(True)
+    
+def winCheck (matrix, p1, p2, threshold):
+    #p1 = 1
+    #p2 = -1
+    #tie = 0
+    
     streak = 0
 
     #Check rows
@@ -12,7 +57,7 @@ def winCheck (matrix, p1, p2, threshold):
             streak += 1
             if streak == threshold:
                 if matrix[row][col] == p1: return(1)
-                elif matrix[row][col] == p2: return(2)
+                elif matrix[row][col] == p2: return(-1)
 
     #Check columns
     for col in range(len(matrix[0])):
@@ -24,7 +69,7 @@ def winCheck (matrix, p1, p2, threshold):
             streak += 1
             if streak == threshold:
                 if matrix[row][col] == p1: return(1)
-                elif matrix[row][col] == p2: return(2)
+                elif matrix[row][col] == p2: return(-1)
 
     #Check upward diagonals
     for row in range(len(matrix)):
@@ -38,7 +83,7 @@ def winCheck (matrix, p1, p2, threshold):
             streak += 1
             if streak == threshold:
                 if matrix[row - i][i] == p1: return(1)
-                elif matrix[row - i][i] == p2: return(2)
+                elif matrix[row - i][i] == p2: return(-1)
     for col in range(len(matrix[0])):
         if len(matrix[0]) - col >= len(matrix): length = len(matrix)
         else: length = len(matrix[0]) - col
@@ -50,7 +95,7 @@ def winCheck (matrix, p1, p2, threshold):
             streak += 1
             if streak == threshold:
                 if matrix[len(matrix) - 1 - i][col + i] == p1: return(1)
-                elif matrix[len(matrix) - 1 - i][col + i] == p2: return(2)
+                elif matrix[len(matrix) - 1 - i][col + i] == p2: return(-1)
 
     #Check downward diagonals
     for col in range(len(matrix[0])):
@@ -64,7 +109,7 @@ def winCheck (matrix, p1, p2, threshold):
             streak += 1
             if streak == threshold:
                 if matrix[i][col + i] == p1: return(1)
-                elif matrix[i][col + i] == p2: return(2)
+                elif matrix[i][col + i] == p2: return(-1)
     for row in range(len(matrix)):
         if len(matrix) - row >= len(matrix[0]): length = len(matrix[0])
         else: length = len(matrix) - row
@@ -76,9 +121,10 @@ def winCheck (matrix, p1, p2, threshold):
             streak += 1
             if streak == threshold:
                 if matrix[row + i][i] == p1: return(1)
-                elif matrix[row + i][i] == p2: return(2)
+                elif matrix[row + i][i] == p2: return(-1)
 
     return(0)
+
 
 def TicTacToe ():
 
@@ -86,9 +132,9 @@ def TicTacToe ():
          ["4", "5", "6"],
          ["7", "8", "9"]]
     
-    plays = 0
+    firstPlay = 0
 
-    while plays != 9:
+    while firstPlay > -1:
 
         #Print the board:
         print(s[0][0] + "|" + s[0][1] + "|" + s[0][2])
@@ -104,31 +150,34 @@ def TicTacToe ():
             if s[row][col] == x:
                 s[row][col] = "X"
                 placed = True
-        plays += 1
 
         #Check for win
-        winner = winCheck(s, "X", "O", 3)
-        if winner != 0: return(winner)
+        evaluation = winCheck(s, "X", "O", 3)
+        if gameOver(s): return(evaluation)
+        elif evaluation != 0: return(evaluation)
 
         #Computer plays
-        if plays == 1:
+        if firstPlay == 0:
             if s[1][1] != "5": s[0][0] = "O"
             else: s[1][1] = "O"
+            firstPlay = 1
         else:
-            if "1" == s[0][0]: s[0][0] = "O"
-            elif "2" == s[0][1]: s[0][1] = "O"
-            elif "3" == s[0][2]: s[0][2] = "O"
-            elif "4" == s[1][0]: s[1][0] = "O"
-            elif "6" == s[1][1]: s[1][1] = "O"
-            elif "6" == s[1][2]: s[1][2] = "O"
-            elif "7" == s[2][0]: s[2][0] = "O"
-            elif "8" == s[2][1]: s[2][1] = "O"
-            elif "9" == s[2][2]: s[2][2] = "O"
-        plays +=1
+            moves = nextMoves(s, "O")
+            bestEval = float('inf')
+            bestMove = copy.deepcopy(s)
+            for move in moves:
+                eval = minimax(move, 9, True)
+                bestEval = min(bestEval, eval)
+                if eval == bestEval:
+                    bestMove = copy.deepcopy(move)
+                if eval == -1:
+                    break
+            s = copy.deepcopy(bestMove)
 
         #Check for win
-        winner = winCheck(s, "X", "O", 3)
-        if winner != 0: return(winner)
+        evaluation = winCheck(s, "X", "O", 3)
+        if gameOver(s): return(evaluation)
+        elif evaluation != 0: return(evaluation)
 
 print(TicTacToe())
 
