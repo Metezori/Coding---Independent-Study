@@ -1,8 +1,9 @@
 import copy
 import random
 
-'''def minimax (position, depth, maximizing):
-    evaluation = winCheck(position, "X", "O", 3)
+def minimax (position, depth, maximizing):
+    evaluation = winCheck(position, "X", "O", 4)
+    evaluation *= depth
     if depth == 0 or gameOver(position):
         return(evaluation)
     elif evaluation != 0:
@@ -22,20 +23,22 @@ import random
         for child in childs:
             evaluation = minimax(child, depth - 1, True)
             minEval = min(minEval, evaluation)
-        return(minEval)'''
+        return(minEval)
 
-'''def nextMoves (current, player):
+def nextMoves (current, player):
     childs = []
-    for row in range(len(current)):
-        for col in range(len(current[0])):
-            if current[row][col] != "X" and current[row][col] != "O":
-                new = copy.deepcopy(current)
-                new[row][col] = player
-                childs.append(new)
-    return(childs)'''
+    for col in range(len(current[0])):
+        for row in range(5, -1, -1):
+                if current[row][int(col)-1] == ".":
+                    new = copy.deepcopy(current)
+                    new[row][int(col)-1] = player
+                    childs.append(new)
+                    break
+
+    return(childs)
 
 def gameOver (current):
-    
+        
     for row in range(len(current)):
         for col in range(len(current[0])):
             if current[row][col] != "X" and current[row][col] != "O":
@@ -131,11 +134,11 @@ def winCheck (matrix, p1, p2, threshold):
 
 def connectFour ():
     matrix = [[".", ".", ".", ".", ".", ".", "."],
-              [".", ".", ".", ".", ".", ".", "."],  
-              [".", ".", ".", ".", ".", ".", "."],
-              [".", ".", ".", ".", ".", ".", "."],
-              [".", ".", ".", ".", ".", ".", "."],
-              [".", ".", ".", ".", ".", ".", "."]]
+              ["O", ".", ".", "X", ".", ".", "O"],  
+              ["X", "X", "O", "O", "O", "X", "O"],
+              ["O", "O", "X", "X", "O", "O", "X"],
+              ["X", "O", "X", "O", "X", "X", "O"],
+              ["X", "X", "O", "X", "O", "O", "O"]]
     guide = "|1|2|3|4|5|6|7|"
 
     #print board
@@ -180,14 +183,15 @@ def connectFour ():
         elif evaluation != 0: return(evaluation)
         
         #Computer plays
-        placed = False
-        while placed == False:
-            x = random.randint(1, 7)
-            for row in range(5, -1, -1):
-                if matrix[row][int(x)-1] == ".":
-                    matrix[row][int(x)-1] = "O"
-                    placed = True
-                    break
+        moves = nextMoves(matrix, "O")
+        bestEval = float('inf')
+        bestMove = copy.deepcopy(matrix)
+        for move in moves:
+            eval = minimax(move, 50, True)
+            bestEval = min(bestEval, eval)
+            if eval == bestEval:
+                bestMove = copy.deepcopy(move)
+        matrix = copy.deepcopy(bestMove)
 
         #print board
         for row in range(6):
