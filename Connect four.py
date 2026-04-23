@@ -1,11 +1,13 @@
 import copy
-import random
+import tqdm
 
-def minimax (position, depth, maximizing):
+def minimax (position, depth, alpha, beta, maximizing): #DEPTH ON EVEN TURN
     evaluation = winCheck(position, "X", "O", 4)
-    evaluation *= depth
-    if depth == 0 or gameOver(position):
+    evaluation *= (depth+1)
+    if gameOver(position):
         return(evaluation)
+    elif depth == 0:
+        return(evaluate(position, maximizing))
     elif evaluation != 0:
         return(evaluation)
     
@@ -13,16 +15,22 @@ def minimax (position, depth, maximizing):
         maxEval = float('-inf')
         childs = nextMoves(position, "X")
         for child in childs:
-            evaluation = minimax(child, depth - 1, False)
+            evaluation = minimax(child, depth - 1, alpha, beta, False)
             maxEval = max(maxEval, evaluation)
+            alpha = max(alpha, evaluation)
+            if beta <= alpha:
+                break
         return(maxEval)
     
     else:
         minEval = float('inf')
         childs = nextMoves(position, "O")
         for child in childs:
-            evaluation = minimax(child, depth - 1, True)
+            evaluation = minimax(child, depth - 1, alpha, beta, True)
             minEval = min(minEval, evaluation)
+            beta = min(beta, evaluation)
+            if beta <= alpha:
+                break
         return(minEval)
 
 def nextMoves (current, player):
@@ -32,7 +40,16 @@ def nextMoves (current, player):
                 if current[row][int(col)-1] == ".":
                     new = copy.deepcopy(current)
                     new[row][int(col)-1] = player
-                    childs.append(new)
+                    '''if row % 2 != 0:
+                        childs.append(new)
+                    else:
+                        childs.insert(0, new)
+                    break'''
+
+                    if col < 4:
+                        childs.insert(0, new)
+                    else:
+                        childs.insert(col-3, new)
                     break
 
     return(childs)
@@ -44,6 +61,49 @@ def gameOver (current):
             if current[row][col] != "X" and current[row][col] != "O":
                 return(False)
     return(True)
+
+def evaluate (matrix, maximizing):
+    Xc = []
+    Oc = []
+    Xr = []
+    Or = []
+    newX = 0
+    newO = 0
+
+    #Looking where pieces are
+    for row in range(len(matrix)): #CHANGE TO ACTUAL VALUES
+        for col in range(len(matrix[row])):
+            if matrix[row][col] == "X":
+                newX += 1
+            elif matrix[row][col] == "O":
+                newO += 1
+        Xr.append(newX)
+        Or.append(newO)
+        newX, newO = 0, 0
+    for col in range(len(matrix[0])):
+        for row in range(len(matrix)):
+            if matrix[row][col] == "X":
+                newX += 1
+            elif matrix[row][col] == "O":
+                newO += 1
+        Xc.append(newX)
+        Oc.append(newO)
+        newX, newO = 0, 0
+
+    #Rewarding centeredness
+    score = 0
+    score += (Xr[2]+Xr[3])*45 + (Xr[1]+Xr[4])*35 + (Xr[0]+Xr[5])*25
+    score += Xc[3]*50 + (Xc[4]+Xc[2])*40 + (Xc[5]+Xc[1])*30 + (Xc[6]+Xc[0])*20
+    score -= (Or[2]+Or[3])*45 + (Or[1]+Or[4])*35 + (Or[0]+Or[5])*25
+    score -= Oc[3]*50 + (Oc[4]+Oc[2])*40 + (Oc[5]+Oc[1])*30 + (Oc[6]+Oc[0])*20
+
+    return(score/10000)
+
+
+    
+
+                
+    
     
 def winCheck (matrix, p1, p2, threshold):
     #p1 = 1
@@ -133,12 +193,20 @@ def winCheck (matrix, p1, p2, threshold):
 
 
 def connectFour ():
-    matrix = [[".", ".", ".", ".", ".", ".", "."],
-              ["O", ".", ".", "X", ".", ".", "O"],  
-              ["X", "X", "O", "O", "O", "X", "O"],
-              ["O", "O", "X", "X", "O", "O", "X"],
+    matrix1 = [[".", ".", ".", ".", ".", ".", "."],
+              [".", ".", ".", "X", ".", "O", "."],  
+              [".", "X", ".", "O", "X", "X", "O"],
+              [".", "O", ".", "X", "O", "O", "X"],
               ["X", "O", "X", "O", "X", "X", "O"],
-              ["X", "X", "O", "X", "O", "O", "O"]]
+              ["X", "O", "O", "X", "O", "O", "O"]]
+
+    matrix = [[".", ".", ".", ".", ".", ".", "."],
+              [".", ".", ".", ".", ".", ".", "."],  
+              [".", ".", ".", ".", ".", ".", "."],
+              [".", ".", ".", ".", ".", ".", "."],
+              [".", ".", ".", ".", ".", ".", "."],
+              [".", ".", ".", ".", ".", ".", "."]]
+    
     guide = "|1|2|3|4|5|6|7|"
 
     #print board
@@ -186,9 +254,12 @@ def connectFour ():
         moves = nextMoves(matrix, "O")
         bestEval = float('inf')
         bestMove = copy.deepcopy(matrix)
-        for move in moves:
-            eval = minimax(move, 50, True)
+        alpha = float("-inf")
+        beta = float("inf")
+        for move in tqdm.tqdm(moves):
+            eval = minimax(move, 8, alpha, beta, True)
             bestEval = min(bestEval, eval)
+            '''print(eval) #PLEASE TRY TO FIND HOW TO GET THE ALPHA BETA THING TO WORK'''
             if eval == bestEval:
                 bestMove = copy.deepcopy(move)
         matrix = copy.deepcopy(bestMove)
