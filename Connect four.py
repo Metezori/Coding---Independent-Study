@@ -2,18 +2,19 @@ import copy
 import tqdm
 
 def minimax (position, depth, alpha, beta, maximizing): #DEPTH ON EVEN TURN
-    evaluation = winCheck(position, "X", "O", 4)
+    if depth == 0:
+        return(evaluate(position[0], maximizing))
+    evaluation = winCheckFast(position[0], position[1], position[2], maximizing)
     evaluation *= (depth+1)
-    if gameOver(position):
+    if evaluation != 0:
         return(evaluation)
-    elif depth == 0:
-        return(evaluate(position, maximizing))
-    elif evaluation != 0:
+    elif gameOver(position[0]):
         return(evaluation)
+       
     
     if maximizing:
         maxEval = float('-inf')
-        childs = nextMoves(position, "X")
+        childs = nextMoves(position[0], "X")
         for child in childs:
             evaluation = minimax(child, depth - 1, alpha, beta, False)
             maxEval = max(maxEval, evaluation)
@@ -24,7 +25,7 @@ def minimax (position, depth, alpha, beta, maximizing): #DEPTH ON EVEN TURN
     
     else:
         minEval = float('inf')
-        childs = nextMoves(position, "O")
+        childs = nextMoves(position[0], "O")
         for child in childs:
             evaluation = minimax(child, depth - 1, alpha, beta, True)
             minEval = min(minEval, evaluation)
@@ -37,21 +38,15 @@ def nextMoves (current, player):
     childs = []
     for col in range(len(current[0])):
         for row in range(5, -1, -1):
-                if current[row][int(col)-1] == ".":
+                if current[row][int(col)] == ".":
                     new = copy.deepcopy(current)
-                    new[row][int(col)-1] = player
-                    '''if row % 2 != 0:
-                        childs.append(new)
-                    else:
-                        childs.insert(0, new)
-                    break'''
-
+                    new[row][int(col)] = player
+                    child = [copy.deepcopy(new), row, col]
                     if col < 4:
-                        childs.insert(0, new)
+                        childs.insert(0, child)
                     else:
-                        childs.insert(col-3, new)
+                        childs.insert(col-3, child)
                     break
-
     return(childs)
 
 def gameOver (current):
@@ -97,13 +92,83 @@ def evaluate (matrix, maximizing):
     score -= (Or[2]+Or[3])*45 + (Or[1]+Or[4])*35 + (Or[0]+Or[5])*25
     score -= Oc[3]*50 + (Oc[4]+Oc[2])*40 + (Oc[5]+Oc[1])*30 + (Oc[6]+Oc[0])*20
 
+    #Endgame check
+    for col in range(len(matrix[0])):
+        new = copy.deepcopy(matrix)
+        for row in range(5, -1, -1):
+            if matrix[row][col] == ".":
+                if row % 2 != 0:
+                    new[row][col] = "X"
+                else:
+                    new[row][col] = "O"
+                win = winCheck(new, "X", "O", 4) #CHANGE TO FASTER WINCHECK
+                if win == 1:
+                    score += 500
+                elif win == -1:
+                    score -= 500
+
     return(score/10000)
 
+def winCheckFast (matrix, row, col, player):
+
+    if player == True: value = -1
+    else: value = 1
+
+    streak = 1
+    #Vertical check
+    for row1 in range(1,6):
+        if matrix[row1][col] != matrix[row1 - 1][col]:
+            streak = 0
+        streak += 1
+        if streak == 4 and matrix[row1][col] != ".":
+            return(value)
+    
+    streak = 1
+    #Horizontal check
+    for col1 in range(1,7):
+        if matrix[row][col1] != matrix[row][col1 - 1]:
+            streak = 0
+        streak += 1
+        if streak == 4 and matrix[row][col1] != ".":
+            return(value)
+        
+    #Downward diagonal check
+    row1 = row
+    col1 = col
+    while row1 != 0 and col1 != 0:
+        row1 -= 1
+        col1 -= 1
+    while row1 != 5 and col1 != 6:
+        if row1 == 0 or col1 == 0:
+            streak = 0
+        elif matrix[row1][col1] != matrix[row1 - 1][col1 - 1]:
+            streak = 0
+        streak += 1
+        if streak == 4 and matrix[row1][col1] != ".":
+            return(value)
+        row1 += 1
+        col1 += 1
+
+
+    #Upward diagonal check
+    row1 = row
+    col1 = col
+    while row1 != 5 and col1 != 0:
+        row1 += 1
+        col1 -= 1
+    while row1 != 0 and col1 != 6:
+        if row1 == 5 or col1 == 0:
+            streak = 0
+        elif matrix[row1][col1] != matrix[row1 + 1][col1 - 1]:
+            streak = 0
+        streak += 1
+        if streak == 4 and matrix[row1][col1] != ".":
+            return(value)
+        row1 -= 1
+        col1 += 1
 
     
-
-                
-    
+    return(0)
     
 def winCheck (matrix, p1, p2, threshold):
     #p1 = 1
@@ -190,8 +255,6 @@ def winCheck (matrix, p1, p2, threshold):
 
     return(0)
 
-
-
 def connectFour ():
     matrix1 = [[".", ".", ".", ".", ".", ".", "."],
               [".", ".", ".", "X", ".", "O", "."],  
@@ -253,15 +316,14 @@ def connectFour ():
         #Computer plays
         moves = nextMoves(matrix, "O")
         bestEval = float('inf')
-        bestMove = copy.deepcopy(matrix)
+        bestMove = copy.deepcopy(matrix[0])
         alpha = float("-inf")
         beta = float("inf")
         for move in tqdm.tqdm(moves):
-            eval = minimax(move, 8, alpha, beta, True)
-            bestEval = min(bestEval, eval)
-            '''print(eval) #PLEASE TRY TO FIND HOW TO GET THE ALPHA BETA THING TO WORK'''
-            if eval == bestEval:
-                bestMove = copy.deepcopy(move)
+            eval = minimax(move, 6, alpha, beta, True)
+            if eval < bestEval:
+                bestEval = eval
+                bestMove = copy.deepcopy(move[0])
         matrix = copy.deepcopy(bestMove)
 
         #print board
