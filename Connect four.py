@@ -138,13 +138,14 @@ def winCheckFast (matrix, row, col, player):
     while row1 != 0 and col1 != 0:
         row1 -= 1
         col1 -= 1
-    while row1 != 5 and col1 != 6:
+    while row1 != 6 and col1 != 7:
         if row1 == 0 or col1 == 0:
             streak = 0
         elif matrix[row1][col1] != matrix[row1 - 1][col1 - 1]:
             streak = 0
         streak += 1
         if streak == 4 and matrix[row1][col1] != ".":
+            #print("WIN", value)
             return(value)
         row1 += 1
         col1 += 1
@@ -156,7 +157,7 @@ def winCheckFast (matrix, row, col, player):
     while row1 != 5 and col1 != 0:
         row1 += 1
         col1 -= 1
-    while row1 != 0 and col1 != 6:
+    while row1 != -1 and col1 != 7:
         if row1 == 5 or col1 == 0:
             streak = 0
         elif matrix[row1][col1] != matrix[row1 + 1][col1 - 1]:
@@ -257,11 +258,11 @@ def winCheck (matrix, p1, p2, threshold):
 
 def connectFour ():
     matrix1 = [[".", ".", ".", ".", ".", ".", "."],
-              [".", ".", ".", "X", ".", "O", "."],  
-              [".", "X", ".", "O", "X", "X", "O"],
-              [".", "O", ".", "X", "O", "O", "X"],
-              ["X", "O", "X", "O", "X", "X", "O"],
-              ["X", "O", "O", "X", "O", "O", "O"]]
+              [".", ".", ".", ".", ".", ".", "."],  
+              [".", ".", ".", "X", ".", ".", "."],
+              [".", ".", ".", "O", ".", ".", "."],
+              [".", ".", "O", "O", ".", "X", "."],
+              [".", ".", "O", "X", "X", "O", "X"]]
 
     matrix = [[".", ".", ".", ".", ".", ".", "."],
               [".", ".", ".", ".", ".", ".", "."],  
@@ -321,6 +322,7 @@ def connectFour ():
         beta = float("inf")
         for move in tqdm.tqdm(moves):
             eval = minimax(move, 6, alpha, beta, True)
+            #print (eval)
             if eval < bestEval:
                 bestEval = eval
                 bestMove = copy.deepcopy(move[0])
