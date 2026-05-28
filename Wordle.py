@@ -219,15 +219,14 @@ def play (answer, remainingWords, words):
     guess = ""
     turns = 0
     while guess != answer and turns < 5:
-        if turns > 0:
-            for word in remainingWords:
-                if word == answer:
-                    print("Still there")
-        if len(remainingWords) > 10:
-            bestGuess = findGuess1(remainingWords, words)
+        if turns == 0:
+            guess = "slate"
         else:
-            bestGuess = endGame(remainingWords, words)
-        guess = bestGuess[0]
+            if len(remainingWords) > 10:
+                bestGuess = findGuess1(remainingWords, words)
+            else:
+                bestGuess = endGame(remainingWords, words)
+            guess = bestGuess[0]
         print("Guess:" + guess)
         output = color(list(answer), list(guess))
         print(str(output))
@@ -241,4 +240,4 @@ def play (answer, remainingWords, words):
         
 answer = random.choice(answers)
 #make deepcopies of answers and words
-play("glare", answers, words)
+play(answer, answers, words)
